@@ -142,7 +142,7 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         version,
         logger: pino({ level: "silent" }),
-        printQRInTerminal: true,
+        printQRInTerminal: false, // سنقوم بطباعته يدوياً لضمان الظهور
         auth: state,
         browser: ["SEIF DESTROYER", "Safari", "3.0.0"],
         syncFullHistory: false,
