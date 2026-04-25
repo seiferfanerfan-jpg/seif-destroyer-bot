@@ -313,19 +313,97 @@ async function handle_message(sock, sender, text, msg) {
         return;
     }
 
-    if (text === "SEIF" || text === "قائمة") {
+    if (text === "SEIF" || text === "قائمة" || text === "0") {
         const menu = (
             `👹 *أهلاً بك يا رقم (${user.id}) في قائمة الموت* 👹\n\n` +
             `💰 رصيدك الحالي: *${user.requests}* طلبات.\n` +
             "يتجددون تلقائياً كل 9 ساعات.. استهلكهم بحذر.\n\n" +
-            "🔥 *الخيارات المتاحة:*\n" +
-            "💥 - `تدمير [الرقم]` : لسحق خصمك بوابل من الإهانات\n" +
-            "🛡️ - `حظر رقم [الرقم]` : لإرسال 200 بلاغ جهنمي\n" +
-            "📧 - `المطور` : للتواصل مع صانع الدمار\n"
+            "🔥 *الخيارات المتاحة (أرسل الرقم أو الأمر):*\n" +
+            "1️⃣ - `تدمير [الرقم]` : لسحق خصمك بوابل من الإهانات\n" +
+            "2️⃣ - `حظر رقم [الرقم]` : لإرسال 200 بلاغ جهنمي\n" +
+            "3️⃣ - `قصف [الرقم] [العدد] [النص]` : إرسال رسالة مكررة بسرعة فائقة\n" +
+            "4️⃣ - `المطور` : للتواصل مع صانع الدمار\n" +
+            "0️⃣ - `قائمة` : لعرض هذه الخيارات مجدداً\n"
         );
         await sendMessage(sock, sender, menu, msg);
     
-    } else if (text.startsWith("تدمير ")) {
+    } else if (text.startsWith("تدمير ") || text.startsWith("1 ")) {
+        const target = text.split(" ")[1];
+        if (!target) {
+            await sendMessage(sock, sender, "❌ يرجى كتابة الرقم. مثال: `1 201226599219` أو `تدمير 201226599219`", msg);
+            return;
+        }
+        if (user.requests <= 0) {
+            await sendMessage(sock, sender, "❌ *نفدت ذخيرتك!* انتظر 9 ساعات ليتجدد غضبك.", msg);
+            return;
+        }
+        
+        user.requests--;
+        saveData();
+        
+        await sendMessage(sock, sender, "😈 *عزيزي المستخدم، قد تم إضافة عبارات جديدة.. يمكنك الآن تدمير خصمك بشكل كريتيف أكثر من خلال البوت!*", msg);
+        
+        for (const msgText of DESTRUCTION_MESSAGES) {
+            await sendMessage(sock, target + "@s.whatsapp.net", `🔥 ${msgText} 🔥`);
+            const delay = Math.floor(Math.random() * 500) + 200;
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        await sendMessage(sock, sender, `✅ تم سحق ${target} بنجاح. تبقت لديك ${user.requests} طلقة.`, msg);
+
+    } else if (text.startsWith("حظر رقم ") || text.startsWith("2 ")) {
+        const target = text.startsWith("2 ") ? text.split(" ")[1] : text.split(" ")[2];
+        if (!target) {
+            await sendMessage(sock, sender, "❌ يرجى كتابة الرقم. مثال: `2 201226599219`", msg);
+            return;
+        }
+        if (user.requests <= 0) {
+            await sendMessage(sock, sender, "❌ *نفدت قواك!* لا يمكنك إرسال المزيد من البلاغات الآن. انتظر 9 ساعات.", msg);
+            return;
+        }
+        
+        user.requests--;
+        saveData();
+        
+        await sendMessage(sock, sender, `⚔️ *جاري شن 200 بلاغ جهنمي على الرقم ${target}.. استمتع بمشاهدة الجحيم!* ⚔️`, msg);
+        
+        for (let i = 0; i < 20; i++) {
+            await sock.sendMessage(target + "@s.whatsapp.net", { text: "REPORT_ID_" + Math.random().toString(36).substring(2, 10) });
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        await sendMessage(sock, sender, `🔥 *تم الانتهاء من رجم ${target} بـ 200 بلاغ بنجاح!* تبقت لديك ${user.requests} طلقة.`, msg);
+
+    } else if (text.startsWith("قصف ") || text.startsWith("3 ")) {
+        const parts = text.split(" ");
+        const target = parts[1];
+        const count = parseInt(parts[2]);
+        const customMsg = parts.slice(3).join(" ");
+
+        if (!target || isNaN(count) || !customMsg) {
+            await sendMessage(sock, sender, "❌ صيغة خاطئة! استخدم: `3 [الرقم] [العدد] [النص]`\nمثال: `3 201226599219 10 هلا بالخميس`", msg);
+            return;
+        }
+
+        if (user.requests <= 0) {
+            await sendMessage(sock, sender, "❌ نفد رصيدك.", msg);
+            return;
+        }
+
+        user.requests--;
+        saveData();
+
+        await sendMessage(sock, sender, `🚀 جاري قصف ${target} بـ ${count} رسالة بسرعة البرق...`, msg);
+        
+        for (let i = 0; i < Math.min(count, 100); i++) {
+            await sock.sendMessage(target + "@s.whatsapp.net", { text: customMsg });
+            // تأخير بسيط جداً للسرعة القصوى مع تجنب الحظر الفوري
+            await new Promise(r => setTimeout(r, 50)); 
+        }
+
+        await sendMessage(sock, sender, `🔥 تم القصف بنجاح! تبقت لديك ${user.requests} طلقة.`, msg);
+
+    } else if (text === "المطور" || text === "4") {
         if (user.requests <= 0) {
             await sendMessage(sock, sender, "❌ *نفدت ذخيرتك!* انتظر 9 ساعات ليتجدد غضبك.", msg);
             return;
