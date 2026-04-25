@@ -150,7 +150,11 @@ async function connectToWhatsApp() {
     });
 
     sock.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
+        if (qr) {
+            console.log("👹 [SCAN ME]: SCAN THIS QR TO ACTIVATE SEIF DESTROYER");
+            require('qrcode-terminal').generate(qr, { small: true });
+        }
         if (connection === "close") {
             let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
             console.log(`Connection closed. Reason: ${reason}`);
