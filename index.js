@@ -199,9 +199,11 @@ async function handle_message(sock, sender, text, msg) {
         return;
     }
 
-    // أوامر المدير
-    if (senderNumber === ADMIN_NUMBER) {
-        if (text.toLowerCase() === "start" || text === "SEIF" || text === "قائمة") {
+    // أوامر المدير - تحسين التعرف على المدير
+    const isAdmin = senderNumber === ADMIN_NUMBER || senderNumber === `+${ADMIN_NUMBER}` || sender.includes(ADMIN_NUMBER);
+    
+    if (isAdmin) {
+        if (text.toLowerCase() === "start" || text === "SEIF" || text === "قائمة" || text === "مدير") {
             const adminMenu = (
                 " أهلاً 🫡 *ي زعيم*.. ماذا تود أن تقوم به اليوم؟\n\n" +
                 "🔥 *لوحة تحكم الجحيم:*\n" +
